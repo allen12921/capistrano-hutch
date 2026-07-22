@@ -1,0 +1,60 @@
+# This file tells systemd how to run Hutch as a 24/7 long-running RabbitMQ
+# consumer daemon.
+#
+# Customize this file based on your bundler location, app directory, etc.
+# Then run:
+#   - systemctl enable <%= fetch(:hutch_service_unit_name) %>
+#   - systemctl {start,stop,restart} <%= fetch(:hutch_service_unit_name) %>
+#
+# Use `journalctl -u <%= fetch(:hutch_service_unit_name) %> -rn 100` to view
+# the last 100 lines of log output.
+#
+[Unit]
+Description=Hutch RabbitMQ Consumer for <%= "#{fetch(:application)} (#{fetch(:stage)})" %>
+After=syslog.target network.target
+
+[Service]
+Type=<%= service_unit_type %>
+<%="User=#{hutch_user(@role)}" if fetch(:hutch_systemctl_user) == :system %>
+WorkingDirectory=<%= current_path %>
+Environment="RACK_ENV=<%= fetch(:hutch_env) %>"
+Environment="RAILS_ENV=<%= fetch(:hutch_env) %>"
+<% if fetch(:hutch_use_login_shell) %>
+ExecStart=/bin/bash -lc '<%= expanded_bundle_command %> exec hutch <%= hutch_cli_args %>'
+<% else %>
+ExecStart=<%= expanded_bundle_command %> exec hutch <%= hutch_cli_args %>
+<% end %>
+<%- Array(fetch(:hutch_service_unit_env_files)).each do |file| %>
+<%="EnvironmentFile=#{file}" -%>
+<% end -%>
+<% Array(fetch(:hutch_service_unit_env_vars)).each do |environment_variable| %>
+<%="Environment=\"#{environment_variable}\"" -%>
+<% end -%>
+
+# Hutch handles TERM/INT by finishing in-flight message processing before
+# exiting. Give it real time to drain instead of the systemd default (90s
+# is often too short for slow consumers, too long for fast ones — tune via
+# hutch_stop_timeout_sec).
+TimeoutStopSec=<%= fetch(:hutch_stop_timeout_sec) %>
+KillSignal=SIGTERM
+
+# if we crash, restart
+RestartSec=1
+Restart=on-failure
+
+<%- hutch_log = fetch(:hutch_log) -%>
+<%- if hutch_log == "journal" %>
+StandardOutput=journal
+StandardError=journal
+<%- else -%>
+StandardOutput=append:<%= hutch_log %>
+StandardError=append:<%= hutch_log %>
+<%- end -%>
+
+SyslogIdentifier=<%= fetch(:hutch_service_unit_name) %>
+<% Array(fetch(:hutch_service_unit_props)).each do |unit_property| %>
+<%="#{unit_property}" -%>
+<% end -%>
+
+[Install]
+WantedBy=<%=(fetch(:hutch_systemctl_user) == :system) ? "multi-user.target" : "default.target"%>
