@@ -1,3 +1,5 @@
+require 'erb'
+require 'stringio'
 require 'capistrano/bundler'
 require 'capistrano/plugin'
 

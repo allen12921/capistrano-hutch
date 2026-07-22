@@ -24,8 +24,14 @@ namespace :hutch do
 
       # Reload systemd
       git_plugin.execute_systemd("daemon-reload")
-      invoke "hutch:enable"
     end
+
+    # Outside the per-host `on` block above, and only once: `invoke` runs a
+    # Rake task at most once per process, but `hutch:enable` itself targets
+    # every host in hutch_role. Calling it from inside the loop would fire
+    # on the first host's turn — before later hosts have their unit file in
+    # place — and be a silent no-op for every subsequent host.
+    invoke "hutch:enable"
   end
 
   desc 'Uninstall Hutch systemd service'

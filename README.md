@@ -8,7 +8,7 @@ Hutch is a single long-running consumer process, not a forking cluster like Puma
 
 Add this line to your application's Gemfile:
 
-    gem 'capistrano-hutch', github: "your-org/capistrano-hutch"
+    gem 'capistrano-hutch', github: "allen12921/capistrano-hutch"
 
 And then execute:
 
