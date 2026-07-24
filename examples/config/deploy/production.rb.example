@@ -1,16 +1,19 @@
 # Before (hand-rolled PID-file hutch.rake):
 #
 #   set :hutch_default_hooks, -> { true }
-#   set :hutch_role, -> { :sq }
+#   set :hutch_role, -> { :hutch }
 #
 # After (this gem) — same variable names, just add the Rails boot path and
 # drop the PID-file plumbing entirely; the systemd unit tracks the process:
 
 set :hutch_default_hooks, true
-set :hutch_role, :sq
+set :hutch_role, :hutch
 set :hutch_require, './config/environment'
 # set :hutch_config, 'config/hutch.yml'   # only if you use a Hutch config file
 # set :hutch_log, 'journal'               # or a file path; defaults to shared_path/log/hutch.log
+
+# Whichever host(s) should run the Hutch worker need the :hutch role, e.g.:
+#   server 'worker.example.com', user: 'deploy', roles: %w{hutch}
 
 # One-time per host, after the first deploy that includes this gem:
 #   bundle exec cap production hutch:install
