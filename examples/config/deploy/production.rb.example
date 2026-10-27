@@ -11,6 +11,9 @@ set :hutch_role, :hutch
 set :hutch_require, './config/environment'
 # set :hutch_config, 'config/hutch.yml'   # only if you use a Hutch config file
 # set :hutch_log, 'journal'               # or a file path; defaults to shared_path/log/hutch.log
+# Resolve Ruby from the release's .ruby-version at service start, so a Ruby
+# upgrade doesn't need hutch:install re-run (RVM only):
+# set :hutch_bundle_command, -> { "#{fetch(:rvm_path)}/bin/rvm in #{current_path} do bundle" }
 
 # Whichever host(s) should run the Hutch worker need the :hutch role, e.g.:
 #   server 'worker.example.com', user: 'deploy', roles: %w{hutch}

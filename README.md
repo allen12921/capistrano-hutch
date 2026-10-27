@@ -49,8 +49,28 @@ install_plugin Capistrano::Hutch::Systemd
 | `hutch_stop_timeout_sec` | `30` | How long systemd waits after `SIGTERM` before `SIGKILL`. Hutch drains in-flight messages on TERM — set this above your slowest consumer's expected handling time. |
 | `hutch_systemctl_user` | `:user` | `:system` installs into `/etc/systemd/system` via sudo instead of a user-space unit. |
 | `hutch_service_unit_name` | `#{application}_hutch_#{stage}` | Override if you run more than one Hutch unit per host (e.g. separate queue groups) — give each a distinct name. |
+| `hutch_bundle_command` | `nil` (SSHKit's `bundle` command) | Replaces the `bundle` part of `ExecStart`. Echoed on the remote host first, so `~` expands. See [Picking up Ruby upgrades without reinstalling](#picking-up-ruby-upgrades-without-reinstalling). |
 
 Nothing here needs to be checked into `config/puma.rb`-style app config — Hutch's own consumer/queue setup lives in your app as normal; this gem only manages the systemd unit and the deploy-time restart.
+
+### Picking up Ruby upgrades without reinstalling
+
+By default `ExecStart` uses the `bundle` command from SSHKit's command map, which with capistrano-rvm looks like `~/.rvm/bin/rvm 3.3.1 do bundle`. The Ruby version is therefore frozen into the unit at `hutch:install` time, and upgrading Ruby means re-running `hutch:install`.
+
+With RVM you can let the service pick the Ruby from the release it starts in instead:
+
+```ruby
+# config/deploy.rb
+set :hutch_bundle_command, -> { "#{fetch(:rvm_path)}/bin/rvm in #{current_path} do bundle" }
+```
+
+which renders as
+
+```
+ExecStart=/home/deploy/.rvm/bin/rvm in /var/apps/myapp/current do bundle exec hutch --require ./config/environment
+```
+
+`rvm in <path>` reads the project's `.rvmrc`, `.versions.conf`, `.ruby-version` (plus `.ruby-gemset`) or a `ruby` line in its `Gemfile`, so on every `hutch:restart` Hutch runs under whatever Ruby the newly deployed release declares. That Ruby (and its bundler) must already be installed on the host, or the service will fail to start. Changing any other setting in this table still requires re-running `hutch:install`.
 
 ### First-Time Setup
 

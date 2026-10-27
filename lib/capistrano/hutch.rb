@@ -53,8 +53,11 @@ module Capistrano
       backend.upload! compiled_template_hutch(from, role), to
     end
 
+    # Echoed on the remote host so `~` etc. expand to the deploy user's paths
+    # before being baked into the unit file.
     def expanded_bundle_command
-      backend.capture(:echo, SSHKit.config.command_map[:bundle]).strip
+      command = fetch(:hutch_bundle_command) || SSHKit.config.command_map[:bundle]
+      backend.capture(:echo, command).strip
     end
 
     # Builds the trailing CLI args passed to `hutch`, e.g.:
@@ -81,6 +84,13 @@ module Capistrano
       set_if_empty :hutch_config, nil
       set_if_empty :hutch_options, []
       set_if_empty :hutch_log, -> { File.join(shared_path, 'log', 'hutch.log') }
+
+      # Replaces the bundle command baked into ExecStart (default: the
+      # rvm/rbenv/chruby-prefixed `bundle` from SSHKit's command map, which
+      # pins the Ruby version at hutch:install time). Point it at something
+      # that resolves the Ruby at service start instead, e.g. with RVM:
+      #   set :hutch_bundle_command, -> { "#{fetch(:rvm_path)}/bin/rvm in #{current_path} do bundle" }
+      set_if_empty :hutch_bundle_command, nil
 
       # Chruby, Rbenv and RVM integration
       append :chruby_map_bins, 'hutch' if fetch(:chruby_map_bins)
