@@ -49,7 +49,7 @@ install_plugin Capistrano::Hutch::Systemd
 | `hutch_stop_timeout_sec` | `30` | How long systemd waits after `SIGTERM` before `SIGKILL`. Hutch drains in-flight messages on TERM — set this above your slowest consumer's expected handling time. |
 | `hutch_systemctl_user` | `:user` | `:system` installs into `/etc/systemd/system` via sudo instead of a user-space unit. |
 | `hutch_service_unit_name` | `#{application}_hutch_#{stage}` | Override if you run more than one Hutch unit per host (e.g. separate queue groups) — give each a distinct name. |
-| `hutch_bundle_command` | `nil` (SSHKit's `bundle` command) | Replaces the `bundle` part of `ExecStart`. Echoed on the remote host first, so `~` expands. See [Picking up Ruby upgrades without reinstalling](#picking-up-ruby-upgrades-without-reinstalling). |
+| `hutch_bundle_command` | `nil` (SSHKit's `bundle` command) | Replaces the `bundle` part of `ExecStart`; `nil`, `false` or a blank value keeps SSHKit's `bundle` command. Echoed on the remote host first, so `~` expands. See [Picking up Ruby upgrades without reinstalling](#picking-up-ruby-upgrades-without-reinstalling). |
 
 Nothing here needs to be checked into `config/puma.rb`-style app config — Hutch's own consumer/queue setup lives in your app as normal; this gem only manages the systemd unit and the deploy-time restart.
 

@@ -56,7 +56,9 @@ module Capistrano
     # Echoed on the remote host so `~` etc. expand to the deploy user's paths
     # before being baked into the unit file.
     def expanded_bundle_command
-      command = fetch(:hutch_bundle_command) || SSHKit.config.command_map[:bundle]
+      command = fetch(:hutch_bundle_command)
+      # nil, false or blank: use the deploy's own bundle command
+      command = SSHKit.config.command_map[:bundle] if !command || Array(command).join(' ').strip.empty?
       backend.capture(:echo, command).strip
     end
 
